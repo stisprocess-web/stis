@@ -1,65 +1,108 @@
-import Image from "next/image";
+/**
+ * @module app/page
+ * Main dashboard — KPIs, priority cases, upcoming tasks, and recent billing.
+ */
 
-export default function Home() {
+import { Nav } from "@/components/nav";
+import { StatCard } from "@/components/stat-card";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { getDashboardData } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const data = await getDashboardData().catch(() => null);
+
+  if (!data) {
+    return (
+      <div>
+        <PageHeader title="Leaird PI CaseFlow" description="Business command center for cases, evidence, operations, and billing." />
+        <Nav />
+        <EmptyState title="Database unavailable" description="Could not connect to the database. Check your configuration." />
+      </div>
+    );
+  }
+
+  const { kpis, cases, tasks, invoices } = data;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div>
+      <PageHeader title="Leaird PI CaseFlow" description="Business command center for cases, evidence, operations, and billing." />
+      <Nav />
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Active Cases" value={String(kpis.activeCases)} />
+        <StatCard label="Open Tasks" value={String(kpis.openTasks)} />
+        <StatCard label="Evidence Logged" value={String(kpis.evidenceCount)} />
+        <StatCard label="Outstanding Invoices" value={`$${kpis.unpaidInvoices.toLocaleString()}`} />
+      </section>
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
+          <h2 className="mb-3 text-lg font-semibold">Priority Cases</h2>
+          {cases.length === 0 ? (
+            <EmptyState title="No cases yet" description="Create your first case to get started." />
+          ) : (
+            <div className="space-y-3">
+              {cases.map((c) => (
+                <article key={c.id} className="rounded-lg border border-black/10 p-3 dark:border-white/15">
+                  <p className="text-sm font-medium">
+                    {c.caseCode} — {c.title}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {c.client.company} • {c.status} • {c.priority}
+                    {c.dueDate ? ` • Due ${c.dueDate.toISOString().slice(0, 10)}` : ""}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
+            <h2 className="mb-3 text-lg font-semibold">Upcoming Tasks</h2>
+            {tasks.length === 0 ? (
+              <EmptyState title="No open tasks" />
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {tasks.map((t) => (
+                  <li key={t.id} className="rounded-lg border border-black/10 p-3 dark:border-white/15">
+                    <p className="font-medium">{t.title}</p>
+                    <p className="text-xs text-zinc-500">
+                      {t.case.caseCode} • {t.owner}
+                      {t.dueDate ? ` • Due ${t.dueDate.toISOString().slice(0, 10)}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
+            <h2 className="mb-3 text-lg font-semibold">Recent Billing</h2>
+            {invoices.length === 0 ? (
+              <EmptyState title="No invoices yet" />
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {invoices.map((inv) => (
+                  <li key={inv.id} className="flex items-center justify-between rounded-lg border border-black/10 p-3 dark:border-white/15">
+                    <div>
+                      <p className="font-medium">{inv.invoiceCode}</p>
+                      <p className="text-xs text-zinc-500">{inv.client.company}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">${inv.amountUsd.toLocaleString()}</p>
+                      <p className="text-xs text-zinc-500">{inv.status}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

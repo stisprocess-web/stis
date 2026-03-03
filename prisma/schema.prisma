@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum CaseStatus {
+  INTAKE
+  ACTIVE
+  PENDING
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ContractType {
+  C1099
+  W2
+}
+
+enum ExpenseStatus {
+  SUBMITTED
+  APPROVED
+  REIMBURSED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  role         String
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  timeEntries TimeEntry[]
+  evidence    Evidence[]
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  company     String
+  email       String
+  phone       String
+  retainerUsd Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cases    Case[]
+  invoices Invoice[]
+}
+
+model Case {
+  id           String     @id @default(cuid())
+  caseCode      String     @unique
+  title         String
+  status        CaseStatus @default(INTAKE)
+  priority      Priority   @default(MEDIUM)
+  dueDate       DateTime?
+  investigator  String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  clientId      String
+  client        Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  tasks         Task[]
+  evidenceItems Evidence[]
+  invoices      Invoice[]
+  timeEntries   TimeEntry[]
+  expenses      Expense[]
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  owner     String
+  dueDate   DateTime?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model Evidence {
+  id              String   @id @default(cuid())
+  evidenceCode    String   @unique
+  title           String
+  type            String
+  filePath        String?
+  chainOfCustody  String
+  uploadedAt      DateTime @default(now())
+
+  caseId          String
+  case            Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  uploadedById    String?
+  uploadedBy      User?    @relation(fields: [uploadedById], references: [id])
+}
+
+model Contractor {
+  id            String       @id @default(cuid())
+  contractorCode String      @unique
+  name          String
+  role          String
+  contractType  ContractType @default(C1099)
+  hourlyRateUsd Float
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  timeEntries   TimeEntry[]
+  expenses      Expense[]
+}
+
+model TimeEntry {
+  id                String   @id @default(cuid())
+  entryCode         String   @unique
+  workDate          DateTime
+  hours             Float
+  notes             String?
+  billableAmountUsd Float
+  createdAt         DateTime @default(now())
+
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  contractorId      String
+  contractor        Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  createdById       String?
+  createdBy         User?    @relation(fields: [createdById], references: [id])
+}
+
+model Expense {
+  id             String        @id @default(cuid())
+  expenseCode    String        @unique
+  category       String
+  amountUsd      Float
+  spentDate      DateTime
+  status         ExpenseStatus @default(SUBMITTED)
+  receiptPath    String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+
+  caseId         String
+  case           Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  contractorId   String
+  contractor     Contractor    @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id          String       @id @default(cuid())
+  invoiceCode String       @unique
+  amountUsd   Float
+  status      InvoiceStatus @default(DRAFT)
+  issuedDate  DateTime
+  dueDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  caseId      String
+  case        Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
