@@ -1,16 +1,15 @@
 /**
  * @module api/tasks
  * POST /api/tasks — Create a new task linked to a case.
+ *
+ * Investigators can only create tasks on their assigned cases.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getRoleFromRequest } from "@/lib/auth";
-import { roleAllowed } from "@/lib/roles";
-import type { AppRole } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
+import { roleAllowed, accessPolicy } from "@/lib/roles";
 import { z } from "zod";
-
-const ALLOWED_ROLES: readonly AppRole[] = ["owner", "admin", "investigator"];
 
 const CreateTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -22,8 +21,8 @@ const CreateTaskSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const role = await getRoleFromRequest(req);
-    if (!roleAllowed(role, [...ALLOWED_ROLES])) {
+    const session = await getSessionFromRequest(req);
+    if (!session || !roleAllowed(session.role, [...accessPolicy.taskView])) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -35,6 +34,16 @@ export async function POST(req: NextRequest) {
     const parsed = CreateTaskSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    // Investigators can only create tasks on their assigned cases
+    if (session.role === "investigator") {
+      const assignment = await prisma.caseAssignment.findUnique({
+        where: { caseId_userId: { caseId: parsed.data.caseId, userId: session.userId } },
+      });
+      if (!assignment) {
+        return NextResponse.json({ error: "You are not assigned to this case" }, { status: 403 });
+      }
     }
 
     const task = await prisma.task.create({

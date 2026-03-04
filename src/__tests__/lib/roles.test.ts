@@ -23,7 +23,7 @@ describe("roles", () => {
   });
 
   describe("accessPolicy", () => {
-    const allRoles: AppRole[] = ["owner", "admin", "investigator", "billing", "client"];
+    const allRoles: AppRole[] = ["owner", "admin", "management", "investigator", "billing", "client"];
 
     it("reporting allows owner, admin, billing only", () => {
       expect(roleAllowed("owner", accessPolicy.reporting)).toBe(true);
@@ -92,9 +92,14 @@ describe("roles", () => {
       expect(roleAllowed("billing", accessPolicy.videoIngest)).toBe(false);
     });
 
-    it("client role is never allowed for any policy", () => {
-      for (const [, allowed] of Object.entries(accessPolicy)) {
-        expect(roleAllowed("client", allowed)).toBe(false);
+    it("client role is only allowed for caseView, evidenceView, and dashboard policies", () => {
+      const clientAllowed = new Set(["caseView", "evidenceView", "dashboard"]);
+      for (const [key, allowed] of Object.entries(accessPolicy)) {
+        if (clientAllowed.has(key)) {
+          expect(roleAllowed("client", allowed)).toBe(true);
+        } else {
+          expect(roleAllowed("client", allowed)).toBe(false);
+        }
       }
     });
 

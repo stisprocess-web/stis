@@ -2,17 +2,22 @@
  * @module app/evidence/page
  * Evidence vault page -- server component wrapper that fetches data
  * and delegates to the interactive EvidenceClient component.
+ *
+ * Role-aware: investigators see only evidence on assigned cases.
  */
 
 import { EvidenceClient } from "@/components/evidence-client";
 import { getEvidenceItems, getCases } from "@/lib/data";
+import { getRoleContext } from "@/lib/server-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function EvidencePage() {
+  const ctx = await getRoleContext();
+
   const [evidence, cases] = await Promise.all([
-    getEvidenceItems().catch(() => []),
-    getCases().catch(() => []),
+    getEvidenceItems(ctx).catch(() => []),
+    getCases(ctx).catch(() => []),
   ]);
 
   // Serialize dates for client component

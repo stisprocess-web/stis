@@ -2,17 +2,24 @@
 
 /**
  * @module components/cases-client
- * Interactive cases table with sorting, new-case modal, and archive actions.
+ * Interactive cases table with sorting, new-case modal, archive actions,
+ * and case assignment management (admin only).
  */
 
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ArrowUpDown, X, Loader2, Archive } from "lucide-react";
+import { Plus, ArrowUpDown, X, Loader2, Archive, UserPlus, UserMinus, Lock } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
+
+interface CaseAssignment {
+  userId: string;
+  userName: string;
+  userEmail: string;
+}
 
 interface SerializedCase {
   id: string;
@@ -21,14 +28,23 @@ interface SerializedCase {
   status: string;
   priority: string;
   investigator: string | null;
+  visibility?: string;
   dueDate: string | null;
   client: { id: string; company: string };
+  assignments?: CaseAssignment[];
 }
 
 interface SerializedClient {
   id: string;
   name: string;
   company: string;
+}
+
+interface SerializedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 type SortKey = "caseCode" | "title" | "client" | "investigator" | "status" | "priority" | "dueDate";
@@ -42,11 +58,18 @@ const STATUS_ORDER: Record<string, number> = { ACTIVE: 4, INTAKE: 3, PENDING: 2,
 export function CasesClient({
   cases,
   clients,
+  userRole = "client",
+  users = [],
 }: {
   cases: SerializedCase[];
   clients: SerializedClient[];
+  userRole?: string;
+  users?: SerializedUser[];
 }) {
   const router = useRouter();
+  const canCreate = ["owner", "admin", "management"].includes(userRole);
+  const canAssign = ["owner", "admin", "management"].includes(userRole);
+  const canArchive = ["owner", "admin"].includes(userRole);
 
   /* Sort state */
   const [sortKey, setSortKey] = useState<SortKey>("caseCode");
@@ -57,6 +80,11 @@ export function CasesClient({
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  /* Assignment modal state */
+  const [assignModalCaseId, setAssignModalCaseId] = useState<string | null>(null);
+  const [assignUserId, setAssignUserId] = useState("");
+  const [assignLoading, setAssignLoading] = useState(false);
+
   /* Archive loading state (per-case) */
   const [archiving, setArchiving] = useState<string | null>(null);
 
@@ -66,6 +94,7 @@ export function CasesClient({
   const [investigator, setInvestigator] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
+  const [visibility, setVisibility] = useState("normal");
 
   /* ── Sorting ────────────────────────────────────────────────────── */
 
@@ -121,6 +150,7 @@ export function CasesClient({
     setInvestigator("");
     setPriority("MEDIUM");
     setDueDate("");
+    setVisibility("normal");
     setFormError(null);
   };
 
@@ -149,6 +179,7 @@ export function CasesClient({
           investigator: investigator || undefined,
           priority,
           dueDate: dueDate || undefined,
+          visibility,
         }),
       });
 
@@ -185,6 +216,48 @@ export function CasesClient({
     }
   };
 
+  const handleAssign = async (caseId: string) => {
+    if (!assignUserId) return;
+    setAssignLoading(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}/assignments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: assignUserId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed" }));
+        alert(typeof err.error === "string" ? err.error : "Failed to assign");
+        return;
+      }
+      setAssignUserId("");
+      setAssignModalCaseId(null);
+      router.refresh();
+    } catch {
+      alert("Network error.");
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  const handleUnassign = async (caseId: string, userId: string) => {
+    if (!confirm("Remove this assignment?")) return;
+    try {
+      const res = await fetch(`/api/cases/${caseId}/assignments`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        alert("Failed to remove assignment");
+        return;
+      }
+      router.refresh();
+    } catch {
+      alert("Network error.");
+    }
+  };
+
   /* ── Sort header helper ─────────────────────────────────────────── */
 
   const SortHeader = ({ label, colKey }: { label: string; colKey: SortKey }) => (
@@ -203,34 +276,40 @@ export function CasesClient({
 
   /* ── Render ─────────────────────────────────────────────────────── */
 
+  const assignModalCase = assignModalCaseId ? cases.find((c) => c.id === assignModalCaseId) : null;
+
   return (
     <div>
       <PageHeader
         title="Cases"
         description="Track every investigation from intake to close."
         actions={
-          <button
-            onClick={openModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-          >
-            <Plus className="h-4 w-4" />
-            New Case
-          </button>
+          canCreate ? (
+            <button
+              onClick={openModal}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+            >
+              <Plus className="h-4 w-4" />
+              New Case
+            </button>
+          ) : undefined
         }
       />
 
       {cases.length === 0 ? (
         <EmptyState
           title="No cases found"
-          description="Create your first case to get started."
+          description={userRole === "investigator" ? "No cases have been assigned to you." : "Create your first case to get started."}
           action={
-            <button
-              onClick={openModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              <Plus className="h-4 w-4" />
-              New Case
-            </button>
+            canCreate ? (
+              <button
+                onClick={openModal}
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                <Plus className="h-4 w-4" />
+                New Case
+              </button>
+            ) : undefined
           }
         />
       ) : (
@@ -245,9 +324,11 @@ export function CasesClient({
                 <SortHeader label="Status" colKey="status" />
                 <SortHeader label="Priority" colKey="priority" />
                 <SortHeader label="Due Date" colKey="dueDate" />
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                  Actions
-                </th>
+                {(canArchive || canAssign) && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -256,10 +337,21 @@ export function CasesClient({
                   key={c.id}
                   className="border-t border-border transition-colors hover:bg-surface-elevated/50"
                 >
-                  <td className="px-4 py-3 font-medium text-accent">{c.caseCode}</td>
+                  <td className="px-4 py-3 font-medium text-accent">
+                    <span className="inline-flex items-center gap-1.5">
+                      {c.caseCode}
+                      {c.visibility === "confidential" && (
+                        <span title="Confidential"><Lock className="h-3 w-3 text-warning" /></span>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-text-primary">{c.title}</td>
                   <td className="px-4 py-3 text-text-secondary">{c.client.company}</td>
-                  <td className="px-4 py-3 text-text-secondary">{c.investigator || "\u2014"}</td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {c.assignments && c.assignments.length > 0
+                      ? c.assignments.map((a) => a.userName).join(", ")
+                      : c.investigator || "\u2014"}
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={c.status} />
                   </td>
@@ -267,20 +359,36 @@ export function CasesClient({
                     <StatusBadge status={c.priority} />
                   </td>
                   <td className="px-4 py-3 text-text-muted">{c.dueDate || "\u2014"}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleArchive(c.id, c.caseCode)}
-                      disabled={archiving === c.id || c.status === "CLOSED"}
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {archiving === c.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Archive className="h-3 w-3" />
-                      )}
-                      Archive
-                    </button>
-                  </td>
+                  {(canArchive || canAssign) && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        {canAssign && (
+                          <button
+                            onClick={() => setAssignModalCaseId(c.id)}
+                            title="Manage assignments"
+                            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent"
+                          >
+                            <UserPlus className="h-3 w-3" />
+                            Assign
+                          </button>
+                        )}
+                        {canArchive && (
+                          <button
+                            onClick={() => handleArchive(c.id, c.caseCode)}
+                            disabled={archiving === c.id || c.status === "CLOSED"}
+                            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {archiving === c.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Archive className="h-3 w-3" />
+                            )}
+                            Archive
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -309,7 +417,6 @@ export function CasesClient({
             )}
 
             <form onSubmit={handleCreate} className="space-y-4">
-              {/* Title */}
               <div>
                 <label htmlFor="case-title" className="mb-1.5 block text-sm font-medium text-text-secondary">
                   Title <span className="text-error">*</span>
@@ -325,7 +432,6 @@ export function CasesClient({
                 />
               </div>
 
-              {/* Client */}
               <div>
                 <label htmlFor="case-client" className="mb-1.5 block text-sm font-medium text-text-secondary">
                   Client <span className="text-error">*</span>
@@ -346,7 +452,6 @@ export function CasesClient({
                 </select>
               </div>
 
-              {/* Investigator */}
               <div>
                 <label htmlFor="case-investigator" className="mb-1.5 block text-sm font-medium text-text-secondary">
                   Investigator
@@ -361,7 +466,6 @@ export function CasesClient({
                 />
               </div>
 
-              {/* Priority + Due Date row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="case-priority" className="mb-1.5 block text-sm font-medium text-text-secondary">
@@ -393,7 +497,24 @@ export function CasesClient({
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Visibility — admin only */}
+              {["owner", "admin"].includes(userRole) && (
+                <div>
+                  <label htmlFor="case-visibility" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                    Visibility
+                  </label>
+                  <select
+                    id="case-visibility"
+                    value={visibility}
+                    onChange={(e) => setVisibility(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="confidential">Confidential</option>
+                  </select>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -412,6 +533,80 @@ export function CasesClient({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Assignment Modal ─────────────────────────────────────────── */}
+      {assignModalCase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-primary">
+                Assign Investigators — {assignModalCase.caseCode}
+              </h2>
+              <button
+                onClick={() => setAssignModalCaseId(null)}
+                className="rounded-md p-1 text-text-muted transition-colors hover:bg-border hover:text-text-primary"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Current assignments */}
+            <div className="mb-4">
+              <p className="mb-2 text-sm font-medium text-text-secondary">Current Assignments</p>
+              {(!assignModalCase.assignments || assignModalCase.assignments.length === 0) ? (
+                <p className="text-sm text-text-muted">No investigators assigned yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {assignModalCase.assignments.map((a) => (
+                    <li key={a.userId} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">{a.userName}</p>
+                        <p className="text-xs text-text-muted">{a.userEmail}</p>
+                      </div>
+                      <button
+                        onClick={() => handleUnassign(assignModalCase.id, a.userId)}
+                        className="rounded-md p-1 text-text-muted hover:text-error"
+                        title="Remove assignment"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Add assignment */}
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">Add Investigator</label>
+                <select
+                  value={assignUserId}
+                  onChange={(e) => setAssignUserId(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+                >
+                  <option value="">Select user...</option>
+                  {users
+                    .filter((u) => !assignModalCase.assignments?.some((a) => a.userId === u.id))
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.role})
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <button
+                onClick={() => handleAssign(assignModalCase.id)}
+                disabled={!assignUserId || assignLoading}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              >
+                {assignLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                Assign
+              </button>
+            </div>
           </div>
         </div>
       )}

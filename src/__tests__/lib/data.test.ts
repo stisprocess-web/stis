@@ -61,12 +61,13 @@ describe("data", () => {
   });
 
   describe("getCases", () => {
-    it("fetches cases with client relation", async () => {
+    it("fetches cases with client and assignments relations", async () => {
       mockPrisma.case.findMany.mockResolvedValue([{ id: "1", client: {} }]);
       const result = await getCases();
       expect(result).toHaveLength(1);
       expect(mockPrisma.case.findMany).toHaveBeenCalledWith({
-        include: { client: true },
+        where: {},
+        include: { client: true, assignments: { include: { user: true } } },
         orderBy: [{ priority: "desc" }, { dueDate: "asc" }],
       });
     });
@@ -87,6 +88,7 @@ describe("data", () => {
       const result = await getEvidenceItems();
       expect(result).toHaveLength(1);
       expect(mockPrisma.evidence.findMany).toHaveBeenCalledWith({
+        where: {},
         include: { case: true, uploadedBy: true },
         orderBy: { uploadedAt: "desc" },
       });
@@ -99,6 +101,7 @@ describe("data", () => {
       const result = await getTasks();
       expect(result).toHaveLength(1);
       expect(mockPrisma.task.findMany).toHaveBeenCalledWith({
+        where: {},
         include: { case: true },
         orderBy: [{ done: "asc" }, { dueDate: "asc" }],
       });

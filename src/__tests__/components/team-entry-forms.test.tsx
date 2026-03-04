@@ -10,8 +10,8 @@ describe("TeamEntryForms", () => {
 
   it("renders time entry and expense forms", () => {
     render(<TeamEntryForms />);
-    expect(screen.getByText("Add Time Entry")).toBeInTheDocument();
-    expect(screen.getByText("Add Expense")).toBeInTheDocument();
+    expect(screen.getByText("Log Time Entry")).toBeInTheDocument();
+    expect(screen.getByText("Log Expense")).toBeInTheDocument();
   });
 
   it("renders Save Time Entry button", () => {
@@ -40,21 +40,16 @@ describe("TeamEntryForms", () => {
     render(<TeamEntryForms />);
     const user = userEvent.setup();
 
-    const [caseInput, contractorInput] = screen.getAllByPlaceholderText(/Case ID/);
+    const timeForm = screen.getByText("Log Time Entry").closest("form")!;
+    const caseInput = timeForm.querySelector('input#te-caseId') as HTMLInputElement;
     await user.type(caseInput, "ca1");
-    const contractorInputs = screen.getAllByPlaceholderText(/Contractor ID/);
-    await user.type(contractorInputs[0], "ct1");
-
-    const dateInputs = screen.getAllByDisplayValue("");
-    // Find the date input in the time entry form
-    const timeForm = screen.getByText("Add Time Entry").closest("form")!;
+    const contractorInput = timeForm.querySelector('input#te-contractorId') as HTMLInputElement;
+    await user.type(contractorInput, "ct1");
     const dateInput = timeForm.querySelector('input[type="date"]') as HTMLInputElement;
     await user.type(dateInput, "2024-01-15");
-
-    const hoursInput = screen.getByPlaceholderText("Hours");
+    const hoursInput = timeForm.querySelector('input#te-hours') as HTMLInputElement;
     await user.type(hoursInput, "2");
-
-    const billableInput = screen.getByPlaceholderText("Billable Amount ($)");
+    const billableInput = timeForm.querySelector('input#te-billable') as HTMLInputElement;
     await user.type(billableInput, "250");
 
     await user.click(screen.getByRole("button", { name: "Save Time Entry" }));
@@ -71,16 +66,16 @@ describe("TeamEntryForms", () => {
     render(<TeamEntryForms />);
     const user = userEvent.setup();
 
-    const timeForm = screen.getByText("Add Time Entry").closest("form")!;
-    const caseInput = timeForm.querySelector('input[name="caseId"]') as HTMLInputElement;
+    const timeForm = screen.getByText("Log Time Entry").closest("form")!;
+    const caseInput = timeForm.querySelector('input#te-caseId') as HTMLInputElement;
     await user.type(caseInput, "ca1");
-    const contractorInput = timeForm.querySelector('input[name="contractorId"]') as HTMLInputElement;
+    const contractorInput = timeForm.querySelector('input#te-contractorId') as HTMLInputElement;
     await user.type(contractorInput, "ct1");
     const dateInput = timeForm.querySelector('input[type="date"]') as HTMLInputElement;
     await user.type(dateInput, "2024-01-15");
-    const hoursInput = timeForm.querySelector('input[name="hours"]') as HTMLInputElement;
+    const hoursInput = timeForm.querySelector('input#te-hours') as HTMLInputElement;
     await user.type(hoursInput, "2");
-    const billableInput = timeForm.querySelector('input[name="billableAmountUsd"]') as HTMLInputElement;
+    const billableInput = timeForm.querySelector('input#te-billable') as HTMLInputElement;
     await user.type(billableInput, "250");
 
     await user.click(screen.getByRole("button", { name: "Save Time Entry" }));
@@ -89,19 +84,19 @@ describe("TeamEntryForms", () => {
   });
 
   it("shows network error on fetch failure for expense", async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    global.fetch = vi.fn().mockRejectedValue(new Error("Network error. Please try again."));
 
     render(<TeamEntryForms />);
     const user = userEvent.setup();
 
-    const expenseForm = screen.getByText("Add Expense").closest("form")!;
-    const caseInput = expenseForm.querySelector('input[name="caseId"]') as HTMLInputElement;
+    const expenseForm = screen.getByText("Log Expense").closest("form")!;
+    const caseInput = expenseForm.querySelector('input#ex-caseId') as HTMLInputElement;
     await user.type(caseInput, "ca1");
-    const contractorInput = expenseForm.querySelector('input[name="contractorId"]') as HTMLInputElement;
+    const contractorInput = expenseForm.querySelector('input#ex-contractorId') as HTMLInputElement;
     await user.type(contractorInput, "ct1");
     const dateInput = expenseForm.querySelector('input[type="date"]') as HTMLInputElement;
     await user.type(dateInput, "2024-01-15");
-    const amountInput = expenseForm.querySelector('input[name="amountUsd"]') as HTMLInputElement;
+    const amountInput = expenseForm.querySelector('input#ex-amount') as HTMLInputElement;
     await user.type(amountInput, "50");
 
     await user.click(screen.getByRole("button", { name: "Save Expense" }));

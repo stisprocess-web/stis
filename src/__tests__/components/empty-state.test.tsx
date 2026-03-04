@@ -16,12 +16,13 @@ describe("EmptyState", () => {
   it("does not render description when not provided", () => {
     const { container } = render(<EmptyState title="Empty" />);
     const paragraphs = container.querySelectorAll("p");
-    // Only the title paragraph
-    expect(paragraphs).toHaveLength(1);
+    // No description paragraph when not provided
+    expect(paragraphs).toHaveLength(0);
   });
 
-  it("renders the mailbox emoji icon", () => {
-    render(<EmptyState title="Test" />);
-    expect(screen.getByText("📭")).toBeInTheDocument();
+  it("renders the default Inbox icon", () => {
+    const { container } = render(<EmptyState title="Test" />);
+    const svg = container.querySelector("svg.lucide-inbox");
+    expect(svg).toBeInTheDocument();
   });
 });

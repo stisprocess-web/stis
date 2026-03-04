@@ -16,7 +16,7 @@ const secret = new TextEncoder().encode(
 export interface SessionPayload {
   userId: string;
   email: string;
-  role: "owner" | "admin" | "investigator" | "billing" | "client";
+  role: "owner" | "admin" | "management" | "investigator" | "billing" | "client";
 }
 
 /**

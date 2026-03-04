@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getRoleFromRequest } from "@/lib/auth";
+import { getSessionFromRequest, isAdmin } from "@/lib/auth";
 import { roleAllowed, accessPolicy } from "@/lib/roles";
 import { z } from "zod";
 
@@ -15,12 +15,13 @@ const CreateCaseSchema = z.object({
   investigator: z.string().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional().default("MEDIUM"),
   dueDate: z.string().optional(),
+  visibility: z.enum(["normal", "confidential"]).optional().default("normal"),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const role = await getRoleFromRequest(req);
-    if (!roleAllowed(role, [...accessPolicy.caseManagement])) {
+    const session = await getSessionFromRequest(req);
+    if (!session || !roleAllowed(session.role, [...accessPolicy.caseManagement])) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest) {
     const parsed = CreateCaseSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    // Only admin can create confidential cases
+    if (parsed.data.visibility === "confidential" && !isAdmin(session.role)) {
+      return NextResponse.json({ error: "Only admin can create confidential cases" }, { status: 403 });
     }
 
     // Auto-generate case code
@@ -46,6 +52,7 @@ export async function POST(req: NextRequest) {
         investigator: parsed.data.investigator ?? null,
         priority: parsed.data.priority,
         dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+        visibility: parsed.data.visibility,
       },
     });
 

@@ -22,22 +22,27 @@ import {
   Shield,
 } from "lucide-react";
 
+/**
+ * Role-based sidebar access control.
+ * Each nav item declares which roles can see it.
+ */
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/cases", label: "Cases", icon: Briefcase },
-  { href: "/clients", label: "Clients", icon: Users },
-  { href: "/evidence", label: "Evidence", icon: FileSearch },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/invoicing", label: "Invoicing", icon: Receipt },
-  { href: "/contracts", label: "Contracts", icon: FileText },
-  { href: "/team", label: "Team & 1099", icon: UserCog },
-  { href: "/video", label: "Video", icon: Video },
-  { href: "/reporting", label: "Reporting", icon: BarChart3 },
-  { href: "/ops/daily", label: "Ops Daily", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["owner", "admin", "management", "investigator", "billing", "client"] },
+  { href: "/cases", label: "Cases", icon: Briefcase, roles: ["owner", "admin", "management", "investigator", "client"] },
+  { href: "/clients", label: "Clients", icon: Users, roles: ["owner", "admin", "management", "billing"] },
+  { href: "/evidence", label: "Evidence", icon: FileSearch, roles: ["owner", "admin", "management", "investigator", "client"] },
+  { href: "/tasks", label: "Tasks", icon: CheckSquare, roles: ["owner", "admin", "management", "investigator"] },
+  { href: "/invoicing", label: "Invoicing", icon: Receipt, roles: ["owner", "admin", "billing"] },
+  { href: "/contracts", label: "Contracts", icon: FileText, roles: ["owner", "admin", "billing"] },
+  { href: "/team", label: "Team & 1099", icon: UserCog, roles: ["owner", "admin", "management", "investigator", "billing"] },
+  { href: "/video", label: "Video", icon: Video, roles: ["owner", "admin", "management", "investigator"] },
+  { href: "/reporting", label: "Reporting", icon: BarChart3, roles: ["owner", "admin", "billing"] },
+  { href: "/ops/daily", label: "Ops Daily", icon: Activity, roles: ["owner", "admin", "management"] },
+  { href: "/settings", label: "Settings", icon: Settings, roles: ["owner", "admin"] },
 ];
 
 interface UserSession {
+  userId: string;
   email: string;
   role: string;
 }
@@ -53,7 +58,7 @@ export function Sidebar() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.authenticated) setUser({ email: d.session.email, role: d.session.role });
+        if (d.authenticated) setUser({ userId: d.user.userId, email: d.user.email, role: d.user.role });
       })
       .catch(() => {});
   }, []);
@@ -63,6 +68,11 @@ export function Sidebar() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
+
+  // Filter nav items based on user role
+  const visibleItems = user
+    ? navItems.filter((item) => item.roles.includes(user.role))
+    : navItems; // Show all while loading to prevent layout shift
 
   return (
     <aside
@@ -79,7 +89,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-0.5">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive =
               item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const Icon = item.icon;

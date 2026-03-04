@@ -6,6 +6,9 @@ const mockPrisma = vi.hoisted(() => ({
     findMany: vi.fn(),
     create: vi.fn(),
   },
+  caseAssignment: {
+    findUnique: vi.fn(),
+  },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
@@ -42,7 +45,8 @@ describe("time-entries API", () => {
       mockPrisma.timeEntry.findMany.mockResolvedValue([
         { id: "te1", hours: 2, contractor: {}, case: {} },
       ]);
-      const res = await GET();
+      const req = makeReq("/api/time-entries", { cookies: { session: ownerToken } });
+      const res = await GET(req);
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data).toHaveLength(1);
@@ -50,7 +54,8 @@ describe("time-entries API", () => {
 
     it("returns empty array when none exist", async () => {
       mockPrisma.timeEntry.findMany.mockResolvedValue([]);
-      const res = await GET();
+      const req = makeReq("/api/time-entries", { cookies: { session: ownerToken } });
+      const res = await GET(req);
       const data = await res.json();
       expect(data).toEqual([]);
     });
@@ -109,6 +114,7 @@ describe("time-entries API", () => {
 
     it("allows investigator role", async () => {
       const token = await createSessionToken({ userId: "u3", email: "i@t.com", role: "investigator" });
+      mockPrisma.caseAssignment.findUnique.mockResolvedValue({ caseId: "ca1", userId: "u3" });
       mockPrisma.timeEntry.create.mockResolvedValue({ id: "te1" });
       const req = makeReq("/api/time-entries", {
         method: "POST",

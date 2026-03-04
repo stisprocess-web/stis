@@ -16,7 +16,7 @@ describe("LoginForm", () => {
 
   it("renders sign in button", () => {
     render(<LoginForm />);
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
   });
 
   it("renders demo credentials hint", () => {
@@ -35,7 +35,7 @@ describe("LoginForm", () => {
 
     await user.type(screen.getByLabelText("Email"), "bad@test.com");
     await user.type(screen.getByLabelText("Password"), "wrong");
-    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await user.click(screen.getByRole("button", { name: "Sign In" }));
 
     expect(await screen.findByText("Invalid credentials.")).toBeInTheDocument();
   });
@@ -48,7 +48,7 @@ describe("LoginForm", () => {
 
     await user.type(screen.getByLabelText("Email"), "test@test.com");
     await user.type(screen.getByLabelText("Password"), "password");
-    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await user.click(screen.getByRole("button", { name: "Sign In" }));
 
     expect(await screen.findByText("Network error. Please try again.")).toBeInTheDocument();
   });

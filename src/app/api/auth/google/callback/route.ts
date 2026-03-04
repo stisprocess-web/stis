@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
     const token = await createSessionToken({
       userId: user.id,
       email: user.email,
-      role: (user.role as "owner" | "admin" | "investigator" | "billing" | "client") || "client",
+      role: (user.role as "owner" | "admin" | "management" | "investigator" | "billing" | "client") || "client",
     });
 
     const res = NextResponse.redirect(new URL("/", baseUrl));
