@@ -25,7 +25,8 @@
 }
 
 body {
-  background: var(--color-background);
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+  background-attachment: fixed;
   color: var(--color-foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
