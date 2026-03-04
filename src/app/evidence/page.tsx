@@ -26,10 +26,10 @@ export default async function EvidencePage() {
     evidenceCode: e.evidenceCode,
     title: e.title,
     type: e.type,
-    filePath: e.filePath,
-    chainOfCustody: e.chainOfCustody,
-    uploadedAt: e.uploadedAt.toISOString(),
-    caseCode: e.case.caseCode,
+    filePath: e.filePath ?? null,
+    chainOfCustody: e.chainOfCustody ?? "",
+    uploadedAt: e.uploadedAt?.toISOString?.() ?? new Date().toISOString(),
+    caseCode: e.case?.caseCode ?? "—",
     uploadedByName: e.uploadedBy?.name ?? null,
   }));
 

@@ -199,7 +199,8 @@ export function EvidenceClient({ evidence, cases }: EvidenceClientProps) {
             <tbody>
               {evidence.map((e) => {
                 const isExpanded = expandedRows.has(e.id);
-                const isTruncated = e.chainOfCustody.length > 60;
+                const chainText = e.chainOfCustody || "";
+                const isTruncated = chainText.length > 60;
                 return (
                   <tr
                     key={e.id}
@@ -232,8 +233,8 @@ export function EvidenceClient({ evidence, cases }: EvidenceClientProps) {
                         <div>
                           <span>
                             {isExpanded
-                              ? e.chainOfCustody
-                              : `${e.chainOfCustody.slice(0, 60)}...`}
+                              ? chainText
+                              : `${chainText.slice(0, 60)}...`}
                           </span>
                           <button
                             onClick={() => toggleRow(e.id)}
@@ -251,7 +252,7 @@ export function EvidenceClient({ evidence, cases }: EvidenceClientProps) {
                           </button>
                         </div>
                       ) : (
-                        e.chainOfCustody || "\u2014"
+                        chainText || "\u2014"
                       )}
                     </td>
                   </tr>
