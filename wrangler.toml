@@ -1,0 +1,13 @@
+name = "stis"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# Custom domain: stis.jahdev.com
+# Configure via Cloudflare Dashboard:
+#   1. Go to Workers & Pages → stis → Custom Domains
+#   2. Add "stis.jahdev.com"
+#   3. Cloudflare auto-creates the CNAME record if jahdev.com is on Cloudflare
+
+[vars]
+AUTH_SECRET = "change-in-production"
