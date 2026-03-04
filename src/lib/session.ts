@@ -2,7 +2,7 @@
  * @module lib/session
  * JWT session token creation and verification using the `jose` library.
  *
- * Tokens are HS256-signed, valid for 7 days, and contain the user's
+ * Tokens are HS256-signed, valid for 30 days, and contain the user's
  * ID, email, and role as claims.
  */
 
@@ -28,7 +28,7 @@ export async function createSessionToken(payload: SessionPayload): Promise<strin
   return new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("30d")
     .sign(secret);
 }
 
