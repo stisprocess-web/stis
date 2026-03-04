@@ -1,25 +1,28 @@
-/**
- * @module components/stat-card
- * Reusable KPI card for dashboards and reporting pages.
- */
+import { type ReactNode } from "react";
 
-/** Props for the StatCard component. */
 interface StatCardProps {
-  /** Label displayed above the value. */
   label: string;
-  /** Primary value to display. */
   value: string;
-  /** Optional hint text below the value. */
   hint?: string;
+  icon?: ReactNode;
+  trend?: "up" | "down" | "neutral";
 }
 
-/** A single KPI metric card with label, large value, and optional hint. */
-export function StatCard({ label, value, hint }: StatCardProps) {
+export function StatCard({ label, value, hint, icon, trend }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{value}</p>
-      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
+    <div className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-border/80">
+      <div className="flex items-start justify-between">
+        <p className="text-sm font-medium text-text-secondary">{label}</p>
+        {icon && <span className="text-text-muted">{icon}</span>}
+      </div>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-text-primary">{value}</p>
+      {hint && (
+        <p className={`mt-1 text-xs ${
+          trend === "up" ? "text-success" : trend === "down" ? "text-error" : "text-text-muted"
+        }`}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,23 +1,21 @@
-/**
- * @module components/page-header
- * Consistent page header with title and description.
- */
+import { type ReactNode } from "react";
 
 interface PageHeaderProps {
-  /** Page title. */
   title: string;
-  /** Short description below the title. */
-  description: string;
+  description?: string;
+  actions?: ReactNode;
 }
 
-/** Standard page header used across all authenticated pages. */
-export function PageHeader({ title, description }: PageHeaderProps) {
+export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <header className="mb-6">
-      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-        {title}
-      </h1>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
-    </header>
+    <div className="mb-8 flex items-start justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">{title}</h1>
+        {description && (
+          <p className="mt-1 text-sm text-text-secondary">{description}</p>
+        )}
+      </div>
+      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+    </div>
   );
 }

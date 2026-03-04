@@ -1,0 +1,463 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Building2,
+  Shield,
+  Plug,
+  FileCheck,
+  Save,
+  CheckCircle,
+  ExternalLink,
+  Download,
+  Mail,
+  FileText,
+  Check,
+} from "lucide-react";
+
+type Tab = "company" | "roles" | "integrations" | "compliance";
+
+const tabs: Array<{ key: Tab; label: string; icon: React.ElementType }> = [
+  { key: "company", label: "Company Info", icon: Building2 },
+  { key: "roles", label: "Access Roles", icon: Shield },
+  { key: "integrations", label: "Integrations", icon: Plug },
+  { key: "compliance", label: "Compliance", icon: FileCheck },
+];
+
+const roles = [
+  {
+    name: "Owner / Admin",
+    color: "bg-error",
+    description: "Full system access including billing, settings, and user management",
+    permissions: {
+      cases: true,
+      evidence: true,
+      time: true,
+      billing: true,
+      settings: true,
+      users: true,
+      reports: true,
+    },
+  },
+  {
+    name: "Lead Investigator",
+    color: "bg-accent",
+    description: "Manage cases, evidence, time entries, and assigned team members",
+    permissions: {
+      cases: true,
+      evidence: true,
+      time: true,
+      billing: false,
+      settings: false,
+      users: false,
+      reports: true,
+    },
+  },
+  {
+    name: "Investigator",
+    color: "bg-warning",
+    description: "Access assigned cases and submit time entries",
+    permissions: {
+      cases: true,
+      evidence: true,
+      time: true,
+      billing: false,
+      settings: false,
+      users: false,
+      reports: false,
+    },
+  },
+  {
+    name: "Billing",
+    color: "bg-success",
+    description: "Invoicing, reporting, and expense management",
+    permissions: {
+      cases: false,
+      evidence: false,
+      time: true,
+      billing: true,
+      settings: false,
+      users: false,
+      reports: true,
+    },
+  },
+  {
+    name: "Client Portal",
+    color: "bg-text-muted",
+    description: "Read-only access to case status and reports",
+    permissions: {
+      cases: true,
+      evidence: false,
+      time: false,
+      billing: false,
+      settings: false,
+      users: false,
+      reports: false,
+    },
+  },
+];
+
+const permissionHeaders = ["Cases", "Evidence", "Time", "Billing", "Settings", "Users", "Reports"];
+const permissionKeys = ["cases", "evidence", "time", "billing", "settings", "users", "reports"] as const;
+
+const complianceItems = [
+  {
+    title: "Chain of Custody",
+    description: "Required on all evidence uploads with timestamps, handler identification, and transfer logs",
+    enabled: true,
+  },
+  {
+    title: "Audit Trail",
+    description: "Complete activity log retained for 7 years covering status changes, billing events, and file access",
+    enabled: true,
+  },
+  {
+    title: "Signed Report PDFs",
+    description: "Export watermarked and signed report PDFs with digital signatures and tamper detection",
+    enabled: true,
+  },
+  {
+    title: "Activity Logging",
+    description: "Comprehensive logging of all user actions, login events, and data modifications",
+    enabled: true,
+  },
+  {
+    title: "Contract PDF Generation",
+    description: "Locally generated PDFs with signature lines, initial blocks, and status tracking",
+    enabled: true,
+  },
+  {
+    title: "Data Encryption",
+    description: "All sensitive data encrypted at rest and in transit using industry-standard protocols",
+    enabled: true,
+  },
+];
+
+export function SettingsClient() {
+  const [activeTab, setActiveTab] = useState<Tab>("company");
+  const [saved, setSaved] = useState(false);
+
+  // Company info form state
+  const [companyName, setCompanyName] = useState("Leaird Investigations");
+  const [address, setAddress] = useState("123 Main Street, Suite 200");
+  const [phone, setPhone] = useState("(555) 123-4567");
+  const [email, setEmail] = useState("office@leairdinvestigations.com");
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div>
+      {/* Tab Navigation */}
+      <div className="mb-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-surface-elevated text-text-primary"
+                  : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Company Info Tab */}
+      {activeTab === "company" && (
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-6 text-lg font-semibold text-text-primary">Company Information</h2>
+          <div className="max-w-2xl space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                Address
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                <Save className="h-4 w-4" />
+                Save Changes
+              </button>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-sm text-success">
+                  <CheckCircle className="h-4 w-4" />
+                  Settings saved successfully
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Access Roles Tab */}
+      {activeTab === "roles" && (
+        <div className="space-y-6">
+          {/* Roles List */}
+          <div className="rounded-xl border border-border bg-surface p-6">
+            <h2 className="mb-4 text-lg font-semibold text-text-primary">Role Definitions</h2>
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div
+                  key={role.name}
+                  className="flex items-start gap-3 rounded-lg border border-border bg-surface-elevated p-4"
+                >
+                  <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${role.color}`} />
+                  <div>
+                    <p className="font-medium text-text-primary">{role.name}</p>
+                    <p className="text-sm text-text-muted">{role.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Permissions Matrix */}
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface p-6">
+            <h2 className="mb-4 text-lg font-semibold text-text-primary">Permissions Matrix</h2>
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-3 pr-4 text-left font-medium text-text-secondary">Role</th>
+                  {permissionHeaders.map((h) => (
+                    <th
+                      key={h}
+                      className="pb-3 px-3 text-center font-medium text-text-secondary"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {roles.map((role) => (
+                  <tr key={role.name} className="border-t border-border">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${role.color}`} />
+                        <span className="font-medium text-text-primary">{role.name}</span>
+                      </div>
+                    </td>
+                    {permissionKeys.map((key) => (
+                      <td key={key} className="py-3 px-3 text-center">
+                        {role.permissions[key] ? (
+                          <Check className="mx-auto h-4 w-4 text-success" />
+                        ) : (
+                          <span className="mx-auto block h-4 w-4 text-center text-text-muted/30">
+                            --
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Integrations Tab */}
+      {activeTab === "integrations" && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* QuickBooks */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                <Download className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-text-primary">QuickBooks</h3>
+                <p className="text-xs text-text-muted">Accounting export</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <a
+                href="/api/exports/quickbooks-time.csv"
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+              >
+                <span>Time Activities CSV</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href="/api/exports/quickbooks-expenses.csv"
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+              >
+                <span>Expenses CSV</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href="/api/exports/time-entries.csv"
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+              >
+                <span>Time Entries CSV</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href="/api/exports/expenses.csv"
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+              >
+                <span>Expenses CSV</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* PDF Generation */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                <FileText className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-text-primary">PDF Generation</h3>
+                <p className="text-xs text-text-muted">Contract & report PDFs</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Engine</span>
+                <span className="font-medium text-text-primary">pdf-lib</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Status</span>
+                <span className="flex items-center gap-1.5 text-success">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Features</span>
+                <span className="text-text-primary">Signatures, watermarks</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Tracking</span>
+                <span className="text-text-primary">Draft, Sent, Signed</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                <Mail className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-text-primary">Email</h3>
+                <p className="text-xs text-text-muted">Notifications & delivery</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Provider</span>
+                <span className="font-medium text-text-primary">SMTP</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Status</span>
+                <span className="flex items-center gap-1.5 text-warning">
+                  <span className="h-2 w-2 rounded-full bg-warning" />
+                  Configured
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Queue</span>
+                <span className="text-text-primary">Client + office copies</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3 py-2.5 text-sm">
+                <span className="text-text-secondary">Templates</span>
+                <span className="text-text-primary">Invoice, contract, report</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compliance Tab */}
+      {activeTab === "compliance" && (
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-2 text-lg font-semibold text-text-primary">
+            Compliance Checklist
+          </h2>
+          <p className="mb-6 text-sm text-text-muted">
+            Regulatory and operational compliance requirements for private investigation operations.
+          </p>
+          <div className="space-y-3">
+            {complianceItems.map((item) => (
+              <div
+                key={item.title}
+                className="flex items-start gap-4 rounded-lg border border-border bg-surface-elevated p-4"
+              >
+                <div
+                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
+                    item.enabled
+                      ? "bg-success/15 text-success"
+                      : "bg-text-muted/15 text-text-muted"
+                  }`}
+                >
+                  <Check className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium text-text-primary">{item.title}</p>
+                  <p className="mt-0.5 text-sm text-text-muted">{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,24 +1,24 @@
-/**
- * @module components/empty-state
- * Placeholder shown when a list or table has no data.
- */
+import { type ReactNode } from "react";
+import { Inbox } from "lucide-react";
 
 interface EmptyStateProps {
-  /** Title text (e.g. "No cases found"). */
   title: string;
-  /** Optional description below the title. */
   description?: string;
+  icon?: ReactNode;
+  action?: ReactNode;
 }
 
-/** Empty state placeholder with centered icon, title, and description. */
-export function EmptyState({ title, description }: EmptyStateProps) {
+export function EmptyState({ title, description, icon, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-white/50 px-6 py-12 text-center dark:border-white/10 dark:bg-zinc-900/50">
-      <div className="mb-3 text-3xl text-zinc-300 dark:text-zinc-600">📭</div>
-      <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{title}</p>
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center">
+      <div className="mb-3 text-text-muted">
+        {icon || <Inbox className="h-10 w-10" />}
+      </div>
+      <h3 className="text-sm font-medium text-text-primary">{title}</h3>
       {description && (
-        <p className="mt-1 text-xs text-zinc-500">{description}</p>
+        <p className="mt-1 max-w-sm text-sm text-text-muted">{description}</p>
       )}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

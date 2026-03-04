@@ -1,12 +1,12 @@
 /**
  * @module app/team/page
- * Team & 1099 management — contractor profiles, time entries, and expense queue.
+ * Team & 1099 page -- server component wrapper that fetches data
+ * and delegates to the interactive TeamClient component.
  */
 
-import { Nav } from "@/components/nav";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { TeamEntryForms } from "@/components/team-entry-forms";
+import { TeamClient } from "@/components/team-client";
 import { prisma } from "@/lib/prisma";
 import type { Contractor, Prisma } from "@prisma/client";
 
@@ -19,10 +19,6 @@ type TimeEntryWithRelations = Prisma.TimeEntryGetPayload<{
 type ExpenseWithRelations = Prisma.ExpenseGetPayload<{
   include: { contractor: true; case: true };
 }>;
-
-/** Link button styling for export actions. */
-const linkBtnClass =
-  "rounded-lg border border-black/10 bg-white px-3 py-2 text-sm shadow-sm transition hover:bg-zinc-50 dark:border-white/15 dark:bg-zinc-900 dark:hover:bg-zinc-800";
 
 export default async function TeamPage() {
   let contractors: Contractor[] = [];
@@ -44,80 +40,57 @@ export default async function TeamPage() {
       }),
     ]);
   } catch {
-    /* Database not available — show empty state */
+    /* Database not available -- show empty state */
   }
 
-  const openExpenses = expenses.filter((e) => e.status !== "REIMBURSED");
+  // Serialize dates for client component (Date objects cannot cross server/client boundary)
+  const serializedContractors = contractors.map((c) => ({
+    id: c.id,
+    contractorCode: c.contractorCode,
+    name: c.name,
+    role: c.role,
+    contractType: c.contractType,
+    hourlyRateUsd: c.hourlyRateUsd,
+  }));
+
+  const serializedTimeEntries = timeEntries.map((t) => ({
+    id: t.id,
+    hours: t.hours,
+    billableAmountUsd: t.billableAmountUsd,
+    workDate: t.workDate ? t.workDate.toISOString().slice(0, 10) : null,
+    notes: t.notes,
+    contractor: { name: t.contractor.name },
+    case: { caseCode: t.case.caseCode },
+  }));
+
+  const serializedExpenses = expenses.map((e) => ({
+    id: e.id,
+    amountUsd: e.amountUsd,
+    category: e.category,
+    status: e.status,
+    spentDate: e.spentDate ? e.spentDate.toISOString().slice(0, 10) : null,
+    notes: e.notes,
+    contractor: { name: e.contractor.name },
+    case: { caseCode: e.case.caseCode },
+  }));
+
+  if (contractors.length === 0 && timeEntries.length === 0 && expenses.length === 0) {
+    return (
+      <div>
+        <PageHeader title="Team & 1099" description="Manage contractor hours, rates, and reimbursement workflow." />
+        <EmptyState
+          title="No team data"
+          description="Add 1099 contractors to the database to get started."
+        />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <PageHeader title="Team & 1099 Management" description="Manage contractor hours, rates, and reimbursement workflow." />
-      <Nav />
-
-      <div className="mb-6 flex flex-wrap gap-2">
-        <a href="/api/exports/time-entries.csv" className={linkBtnClass}>Export Time CSV</a>
-        <a href="/api/exports/expenses.csv" className={linkBtnClass}>Export Expenses CSV</a>
-        <a href="/api/exports/1099-summary" className={linkBtnClass}>1099 Summary JSON</a>
-      </div>
-
-      {contractors.length === 0 ? (
-        <EmptyState title="No contractors found" description="Add 1099 contractors to the database to get started." />
-      ) : (
-        <section className="mb-6 grid gap-3 md:grid-cols-3">
-          {contractors.map((c) => (
-            <article key={c.id} className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
-              <p className="text-xs text-zinc-500">{c.contractorCode}</p>
-              <h2 className="font-semibold">{c.name}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{c.role}</p>
-              <p className="mt-2 text-sm">
-                {c.contractType} • ${c.hourlyRateUsd}/hr
-              </p>
-            </article>
-          ))}
-        </section>
-      )}
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
-          <h2 className="mb-3 text-lg font-semibold">Time Entries</h2>
-          {timeEntries.length === 0 ? (
-            <EmptyState title="No time entries" />
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {timeEntries.map((entry) => (
-                <li key={entry.id} className="rounded-lg border border-black/10 p-3 dark:border-white/15">
-                  <p className="font-medium">{entry.contractor.name} — {entry.hours}h</p>
-                  <p className="text-xs text-zinc-500">
-                    Case {entry.case.caseCode} • {entry.workDate.toISOString().slice(0, 10)} • ${entry.billableAmountUsd.toLocaleString()}
-                  </p>
-                  {entry.notes && <p className="text-xs text-zinc-500">{entry.notes}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-900">
-          <h2 className="mb-3 text-lg font-semibold">Expense Queue</h2>
-          {openExpenses.length === 0 ? (
-            <EmptyState title="No pending expenses" />
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {openExpenses.map((exp) => (
-                <li key={exp.id} className="rounded-lg border border-black/10 p-3 dark:border-white/15">
-                  <p className="font-medium">{exp.contractor.name} — ${exp.amountUsd.toLocaleString()}</p>
-                  <p className="text-xs text-zinc-500">
-                    {exp.category} • {exp.case.caseCode} • {exp.spentDate.toISOString().slice(0, 10)}
-                  </p>
-                  <p className="text-xs text-zinc-500">Status: {exp.status}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <TeamEntryForms />
-    </div>
+    <TeamClient
+      contractors={serializedContractors}
+      timeEntries={serializedTimeEntries}
+      expenses={serializedExpenses}
+    />
   );
 }
