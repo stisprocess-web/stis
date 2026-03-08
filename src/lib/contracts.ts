@@ -156,7 +156,8 @@ export async function generateContractPdf(
   }
 
   // ── Page 1: Contract body ──
-  let { page, y } = addPage();
+  const { page, y: initialY } = addPage();
+  let y = initialY;
   const pageWidth = 612 - margin * 2;
 
   // Header

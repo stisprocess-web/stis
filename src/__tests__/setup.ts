@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import React from "react";
 import { vi } from "vitest";
 
 // Mock next/navigation for client components
@@ -24,7 +25,6 @@ vi.mock("next/link", () => ({
     href: string;
     [key: string]: unknown;
   }) => {
-    const React = require("react");
     return React.createElement("a", { href, ...props }, children);
   },
 }));

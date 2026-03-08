@@ -1,6 +1,7 @@
 /**
  * Shared test helpers and mock factories.
  */
+import { NextRequest } from "next/server";
 import { vi } from "vitest";
 
 /* ── Prisma mock ─────────────────────────────────────────────────── */
@@ -57,7 +58,6 @@ export function createMockRequest(
     reqInit.body = JSON.stringify(body);
   }
 
-  const { NextRequest } = require("next/server");
   const req = new NextRequest(new URL(url, "http://localhost:3000"), reqInit);
 
   for (const [key, value] of Object.entries(cookies)) {
