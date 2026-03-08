@@ -95,7 +95,7 @@ interface UserRow {
 }
 
 export function SettingsClient() {
-  const router = useRouter();
+  const _router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("company");
   const [saved, setSaved] = useState(false);
 

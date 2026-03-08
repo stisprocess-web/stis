@@ -2,7 +2,7 @@
 /**
  * Workflow test: Create contract → Generate PDF → Mark signed
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest } from "next/server";

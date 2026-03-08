@@ -10,7 +10,7 @@ import {
   Film,
   ChevronDown,
   ChevronUp,
-  Image,
+  Image as ImageIcon,
   Loader2,
 } from "lucide-react";
 
@@ -264,13 +264,13 @@ export function VideoClient() {
                   key={i}
                   className="flex aspect-video items-center justify-center rounded-lg border border-border bg-surface-elevated"
                 >
-                  <Image className="h-6 w-6 text-text-muted" />
+                  <ImageIcon className="h-6 w-6 text-text-muted" />
                 </div>
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
-              <Image className="mb-3 h-10 w-10 text-text-muted" />
+              <ImageIcon className="mb-3 h-10 w-10 text-text-muted" />
               <p className="text-sm text-text-muted">
                 {status === "processing"
                   ? "Extracting frames..."

@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { canWriteTime, getSessionFromRequest, isAdmin, canViewFinancials } from "@/lib/auth";
+import { canWriteTime, getSessionFromRequest, canViewFinancials } from "@/lib/auth";
 import { CreateTimeEntrySchema } from "@/lib/validation";
 
 export async function GET(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     // Strip billable amounts for non-financial roles
     if (!canViewFinancials(session.role)) {
-      const stripped = entries.map(({ billableAmountUsd, ...rest }) => rest);
+      const stripped = entries.map(({ billableAmountUsd: _billableAmountUsd, ...rest }) => rest);
       return NextResponse.json(stripped);
     }
 

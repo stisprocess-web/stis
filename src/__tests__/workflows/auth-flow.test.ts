@@ -2,7 +2,7 @@
 /**
  * Workflow test: Login → access protected routes → denial without auth
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { middleware } from "@/middleware";
 import { NextRequest } from "next/server";
 import { createSessionToken } from "@/lib/session";

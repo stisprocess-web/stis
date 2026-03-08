@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionFromRequest, isAdmin } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { roleAllowed, accessPolicy } from "@/lib/roles";
 import { z } from "zod";
 
