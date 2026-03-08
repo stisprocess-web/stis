@@ -27,7 +27,7 @@ describe("validation schemas", () => {
     });
 
     it("accepts input without notes (defaults to empty)", () => {
-      const { notes, ...rest } = valid;
+      const { notes: _notes, ...rest } = valid;
       const result = CreateTimeEntrySchema.safeParse(rest);
       expect(result.success).toBe(true);
       if (result.success) expect(result.data.notes).toBe("");

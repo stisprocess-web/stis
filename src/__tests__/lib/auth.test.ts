@@ -1,7 +1,6 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { canWriteTime, canApproveExpenses, canManageContracts, canSubmitExpenses } from "@/lib/auth";
-import type { AppRole } from "@/lib/auth";
 
 describe("auth", () => {
   describe("canWriteTime", () => {

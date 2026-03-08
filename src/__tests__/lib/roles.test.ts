@@ -23,7 +23,7 @@ describe("roles", () => {
   });
 
   describe("accessPolicy", () => {
-    const allRoles: AppRole[] = ["owner", "admin", "management", "investigator", "billing", "client"];
+    const _allRoles: AppRole[] = ["owner", "admin", "management", "investigator", "billing", "client"];
 
     it("reporting allows owner, admin, billing only", () => {
       expect(roleAllowed("owner", accessPolicy.reporting)).toBe(true);
